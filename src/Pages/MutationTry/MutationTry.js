@@ -34,16 +34,32 @@ const MutationTry = () => {
     console.log('Respuesta del createdProduct:', createdProduct);
     return createdProduct;
   };
-  // POST --------------------------
+
+  // POST(2) → 1) Producto y 2) Fotos --------------------------
   // Modal Post Fotos state
   const [show, setShow] = useState(false);
-  const [modalInputValues, setModalInputValues] = useState([]);
-  console.log('ModalInputsValue Array:', modalInputValues);
-
-  //  postear fotos con useMutation (REACT QUERY)
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  const [modalInputValues, setModalInputValues] = useState([]);
+
+  console.log('ModalInputsValue Array:', modalInputValues);
+
+  // Service para postear fotos
+  const postPhotos = async (product_id, photos) => {
+    console.log(":>", product_id, photos)
+    const res = await axios.post(`${URL}/products/photos/${product_id}`, photos);
+    const addedPhotos = res.data ? res.data : {};
+    console.log('Respuesta del postPhotos:', addedPhotos);
+    return addedPhotos;
+  };
+  //  postear fotos con useMutation (REACT QUERY)
+  const addPhotosMutation = useMutation(postPhotos, {
+    onSuccess: async () => {
+      await queryClient.fetchQuery('allProducts');
+    },
+  });
 
   // postear data con useMutation (REACT QUERY)
   const createProductMutation = useMutation(postProduct, {
@@ -52,7 +68,7 @@ const MutationTry = () => {
     },
   });
 
-  const handlerCrearProducto = (e) => {
+  const handlerCrearProducto = async (e) => {
     e.preventDefault();
     //   console.log(":>", e.target.elements)
     // console.log(e.target.elements[0].value)
@@ -78,11 +94,25 @@ const MutationTry = () => {
       es_nuevo: es_nuevo.value === 'on' ? true : false,
       fecha_de_alta: fecha_de_alta.value,
     };
-    console.log('bodyData', bodyData);
-    // Envio la data
-    console.log('bodyData LENGTH', Object.keys(bodyData).length);
+    // console.log('bodyData', bodyData)
+    // console.log('bodyData LENGTH', Object.keys(bodyData).length)
+
+    //1) Post de los datos de PRODUCTO
     createProductMutation.mutate(bodyData);
 
+    console.log(
+      '???createProductMutation.data',
+       await createProductMutation.data.newProduct.id
+    );
+    //2) Post de las FOTOS
+    const photos = [...modalInputValues]
+    if (modalInputValues.length === 2){
+        addPhotosMutation.mutate(
+          await createProductMutation.data.newProduct.id,
+          photos
+        );
+        console.log('???addPhotosMutation', await addPhotosMutation.data);
+    }
     //Para limpiar los imputs luego de ccargar las tareas:
     e.target.reset();
   };
@@ -106,7 +136,7 @@ const MutationTry = () => {
 
   if (isLoading) return <h2>Loading...</h2>;
   if (isError) return <h2>Error en servidor!</h2>;
-
+  console.log("fetched products", products)
   return (
     <Container>
       <Row>
