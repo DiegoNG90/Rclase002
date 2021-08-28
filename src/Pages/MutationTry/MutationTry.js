@@ -27,6 +27,8 @@ const MutationTry = () => {
     isLoading,
     isError,
   } = useQuery('allProducts', fetchProducts);
+
+  // POST(2) → 1) Producto y 2) Fotos --------------------------
   // Service para postear
   const postProduct = async (body) => {
     const res = await axios.post(`${URL}/products`, body);
@@ -35,7 +37,6 @@ const MutationTry = () => {
     return createdProduct;
   };
 
-  // POST(2) → 1) Producto y 2) Fotos --------------------------
   // Modal Post Fotos state
   const [show, setShow] = useState(false);
 
@@ -47,9 +48,9 @@ const MutationTry = () => {
   console.log('ModalInputsValue Array:', modalInputValues);
 
   // Service para postear fotos
-  const postPhotos = async (product_id, photos) => {
-    console.log(":>", product_id, photos)
-    const res = await axios.post(`${URL}/products/photos/${product_id}`, photos);
+  const postPhotos = async ({product_id, body}) => {
+    console.log("Params :>", product_id, body)
+    const res = await axios.post(`${URL}/products/photos/${product_id}`, body);
     const addedPhotos = res.data ? res.data : {};
     console.log('Respuesta del postPhotos:', addedPhotos);
     return addedPhotos;
@@ -94,24 +95,26 @@ const MutationTry = () => {
       es_nuevo: es_nuevo.value === 'on' ? true : false,
       fecha_de_alta: fecha_de_alta.value,
     };
-    // console.log('bodyData', bodyData)
-    // console.log('bodyData LENGTH', Object.keys(bodyData).length)
 
     //1) Post de los datos de PRODUCTO
-    createProductMutation.mutate(bodyData);
+    try{
+      createProductMutation.mutate(bodyData);
+      const mutationResponseId = await createProductMutation.data.newProduct.id;
 
-    console.log(
-      '???createProductMutation.data',
-       await createProductMutation.data.newProduct.id
-    );
-    //2) Post de las FOTOS
-    const photos = [...modalInputValues]
-    if (modalInputValues.length === 2){
-        addPhotosMutation.mutate(
-          await createProductMutation.data.newProduct.id,
-          photos
-        );
-        console.log('???addPhotosMutation', await addPhotosMutation.data);
+      console.log('???createProductMutation.data', mutationResponseId);
+      //2) Post de las FOTOS
+      const bodyPhotos = {photos: modalInputValues}
+      console.log("bodyPhotos :>", bodyPhotos)
+      if (modalInputValues.length === 2){
+          addPhotosMutation.mutate({
+            product_id: mutationResponseId,
+            body: bodyPhotos,
+          });
+          console.log('???addPhotosMutation', await addPhotosMutation.data);
+      }
+
+    }catch(error){
+      console.log("Error en crear Producto",error)
     }
     //Para limpiar los imputs luego de ccargar las tareas:
     e.target.reset();
