@@ -12,6 +12,7 @@ const URL = 'http://localhost:8000/api'
 
 
 const MutationTry = () => {
+    // GET ---------------------------
     // Service para fetchear
     const fetchProducts = async() => {
         const res = await axios.get(`${URL}/products`)
@@ -27,13 +28,14 @@ const MutationTry = () => {
         console.log("Respuesta del createdProduct:", createdProduct)
         return createdProduct
     }
+    // POST --------------------------
     // postear data con useMutation (REACT QUERY)
-    const productMutation = useMutation(postProduct, { onSuccess: async () => {
+    const createProductMutation = useMutation(postProduct, { onSuccess: async () => {
        await queryClient.fetchQuery('allProducts')
       }
     })
 
-    const crearProducto = (e) => {
+    const handlerCrearProducto = (e) => {
       e.preventDefault();
       //   console.log(":>", e.target.elements)
       // console.log(e.target.elements[0].value)
@@ -62,13 +64,27 @@ const MutationTry = () => {
       console.log("bodyData", bodyData)
       // Envio la data
       console.log("bodyData LENGTH", Object.keys(bodyData).length)
-      productMutation.mutate(bodyData)
+      createProductMutation.mutate(bodyData);
 
       //Para limpiar los imputs luego de ccargar las tareas:
       e.target.reset();
-      //console.log(task);
+    };
+    // DELETE ---------------------------
+    const deleteProduct = async (product_id) => {
+      const res = await axios.delete(`${URL}/products/${product_id}`);
+      const createdProduct = res.data ? res.data : {};
+      console.log('Respuesta del createdProduct:', createdProduct);
+      return createdProduct;
     };
 
+    const deleteProductMutation = useMutation(deleteProduct , { onSuccess: async () => {
+       await queryClient.fetchQuery('allProducts')
+      }
+    });
+
+    const handlerEliminarProducto = (product_id) => {
+        deleteProductMutation.mutate(Number(product_id));
+    }
 
     if(isLoading) return <h2>Loading...</h2>
     if(isError) return <h2>Error en servidor!</h2>
@@ -77,7 +93,7 @@ const MutationTry = () => {
       <Container>
         <Row>
           <h1>Crear producto con useMutation</h1>
-          <Form onSubmit={crearProducto}>
+          <Form onSubmit={handlerCrearProducto}>
             <Form.Group className="mb-3" controlId="nombre">
               <Form.Label>Nombre producto</Form.Label>
               <Form.Control placeholder="Producto"></Form.Control>
@@ -142,7 +158,12 @@ const MutationTry = () => {
                     {descripcion}
                     Precio: $ {precio} .- Categoria {categoria}
                   </Card.Text>
-                  <Button variant="primary">Go somewhere</Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => handlerEliminarProducto(id)}
+                  >
+                    🗑
+                  </Button>
                 </Card.Body>
               </Card>
             </Col>
