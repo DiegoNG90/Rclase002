@@ -95,36 +95,49 @@ const MutationTry = () => {
       es_nuevo: es_nuevo.value === 'on' ? true : false,
       fecha_de_alta: fecha_de_alta.value,
     };
-
+    let idMutation;
     //1) Post de los datos de PRODUCTO
-    try{
+    try {
       createProductMutation.mutate(bodyData);
-      const mutationResponseId = await createProductMutation.data.newProduct.id;
+      const mutationResponse = await createProductMutation.data;
+      const {newProduct} = mutationResponse
+      const {id} = newProduct
+      console.log(`mutationResponse check for new ID :>`, mutationResponse)
+      idMutation = id + 1
+      console.log(`idMutation definition :>`, idMutation)
 
-      console.log('???createProductMutation.data', mutationResponseId);
+    } catch (error) {
+      console.log('Error en crear Producto', error);
+    }
+    try{
       //2) Post de las FOTOS
       const bodyPhotos = {photos: modalInputValues}
-      console.log("bodyPhotos :>", bodyPhotos)
+      console.log("bodyPhotos", bodyPhotos)
+      console.log(`idMutation after first try :>`, idMutation)
       if (modalInputValues.length === 2){
+
           addPhotosMutation.mutate({
-            product_id: mutationResponseId,
+            product_id: idMutation,
             body: bodyPhotos,
           });
-          console.log('???addPhotosMutation', await addPhotosMutation.data);
+
+        console.log('???addPhotosMutation', await addPhotosMutation.data);
       }
 
     }catch(error){
-      console.log("Error en crear Producto",error)
+      console.log('Error en subir fotos a producto', error);
     }
+
+
     //Para limpiar los imputs luego de ccargar las tareas:
-    e.target.reset();
+    // e.target.reset();
   };
   // DELETE ---------------------------
   const deleteProduct = async (product_id) => {
     const res = await axios.delete(`${URL}/products/${product_id}`);
-    const createdProduct = res.data ? res.data : {};
-    console.log('Respuesta del createdProduct:', createdProduct);
-    return createdProduct;
+    const deletedProduct = res.data ? res.data : {};
+    console.log('Respuesta del deletedProduct:', deletedProduct);
+    return deletedProduct;
   };
 
   const deleteProductMutation = useMutation(deleteProduct, {
